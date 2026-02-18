@@ -10,6 +10,7 @@ from app.models.user import User
 from app.schemas.wishlist import (
     ItemInWishlist,
     WishlistCreate,
+    WishlistListResponse,
     WishlistResponse,
     WishlistUpdate,
     WishlistWithItemsResponse,
@@ -19,12 +20,13 @@ from app.services import wishlist_service
 router = APIRouter(tags=["wishlists"])
 
 
-@router.get("/wishlists", response_model=list[WishlistResponse])
+@router.get("/wishlists", response_model=list[WishlistListResponse])
 async def list_wishlists(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await wishlist_service.get_user_wishlists(db, user.id)
+    wishlists = await wishlist_service.get_user_wishlists(db, user.id)
+    return [_build_wishlist_list_response(w) for w in wishlists]
 
 
 @router.post("/wishlists", response_model=WishlistResponse, status_code=201)
@@ -106,4 +108,29 @@ def _build_wishlist_response(wishlist, *, is_owner: bool) -> WishlistWithItemsRe
         created_at=wishlist.created_at,
         updated_at=wishlist.updated_at,
         items=items,
+    )
+
+
+def _build_wishlist_list_response(wishlist) -> WishlistListResponse:
+    items_count = 0
+    reserved_count = 0
+    for item in wishlist.items:
+        if item.is_deleted:
+            continue
+        items_count += 1
+        if item.reservations:
+            reserved_count += 1
+
+    return WishlistListResponse(
+        id=wishlist.id,
+        user_id=wishlist.user_id,
+        title=wishlist.title,
+        description=wishlist.description,
+        slug=wishlist.slug,
+        is_public=wishlist.is_public,
+        event_date=wishlist.event_date,
+        created_at=wishlist.created_at,
+        updated_at=wishlist.updated_at,
+        items_count=items_count,
+        reserved_count=reserved_count,
     )

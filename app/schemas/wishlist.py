@@ -32,6 +32,11 @@ class WishlistResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class WishlistListResponse(WishlistResponse):
+    items_count: int = 0
+    reserved_count: int = 0
+
+
 class WishlistWithItemsResponse(WishlistResponse):
     items: list["ItemInWishlist"] = []
 

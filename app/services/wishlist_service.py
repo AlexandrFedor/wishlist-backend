@@ -23,6 +23,7 @@ def _generate_slug(title: str) -> str:
 async def get_user_wishlists(db: AsyncSession, user_id: uuid.UUID) -> list[Wishlist]:
     result = await db.execute(
         select(Wishlist)
+        .options(selectinload(Wishlist.items).selectinload(Item.reservations))
         .where(Wishlist.user_id == user_id)
         .order_by(Wishlist.created_at.desc())
     )
